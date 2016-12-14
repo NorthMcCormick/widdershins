@@ -70,7 +70,7 @@ function dereference(obj,swagger){
         changes = 0;
         recurseotron.recurse(obj,{},function(obj,state) {
             if ((state.key === '$ref') && (typeof obj === 'string') && (!circular.isCircular(circles, obj))) {
-				state.parents[state.parents.length-2][state.keys[state.keys.length-2]] = jptr.jptr(swagger,obj);
+                state.parents[state.parents.length-2][state.keys[state.keys.length-2]] = jptr.jptr(swagger,obj);
                 delete state.parent["$ref"];
                 changes++;
             }
@@ -118,11 +118,11 @@ function convert(swagger,options) {
     options = Object.assign({},defaults,options);
 
     if (typeof templates === 'undefined') {
-		templates = dot.process({ path: path.join(__dirname,'templates') });
-	}
-	if (options.user_templates) {
-		templates = Object.assign(templates, dot.process({ path: options.user_templates }));
-	}
+        templates = dot.process({ path: path.join(__dirname,'templates') });
+    }
+    if (options.user_templates) {
+        templates = Object.assign(templates, dot.process({ path: options.user_templates }));
+    }
 
     var header = {};
     header.title = swagger.info.title+' '+((swagger.info.version.toLowerCase().startsWith('v')) ? swagger.info.version : 'v'+swagger.info.version);
@@ -130,7 +130,7 @@ function convert(swagger,options) {
     // we always show json / yaml / xml if used in consumes/produces
     header.language_tabs = options.language_tabs;
 
-	circles = circular.getCircularRefs(swagger, options);
+    circles = circular.getCircularRefs(swagger, options);
 
     header.toc_footers = [];
     if (swagger.externalDocs) {
@@ -143,8 +143,8 @@ function convert(swagger,options) {
     header.highlight_theme = options.theme||'darkula';
 
     var data = {};
-	data.openapi = swagger;
-	data.header = header;
+    data.openapi = swagger;
+    data.header = header;
 
     data.host = swagger.host;
     data.protocol = swagger.schemes ? swagger.schemes[0] : '';
@@ -154,33 +154,33 @@ function convert(swagger,options) {
         data.protocol = u.protocol.replace(':','');
     }
     if (!data.host) host = 'example.com';
-	if (!data.protocol) protocol = 'http';
+    if (!data.protocol) protocol = 'http';
 
-	data.baseUrl = data.protocol+'://'+data.host+(swagger.basePath ? swagger.basePath : '/');
+    data.baseUrl = data.protocol+'://'+data.host+(swagger.basePath ? swagger.basePath : '/');
     data.contactName = (swagger.info.contact && swagger.info.contact.name ? swagger.info.contact.name : 'Support');
     
     var content = '';
-	content += templates.heading_main(data)+'\n';
+    content += templates.heading_main(data)+'\n';
 
     if (swagger.securityDefinitions) {
-		data.securityDefinitions = [];
+        data.securityDefinitions = [];
         for (var s in swagger.securityDefinitions) {
             var secdef = swagger.securityDefinitions[s];
             var desc = secdef.description ? secdef.description : '';
             if (secdef.type == 'oauth2') {
-			    secdef.scopeArray = [];
+                secdef.scopeArray = [];
                 for (var s in secdef.scopes) {
-					var scope = {};
-					scope.name = s;
-					scope.description = secdef.scopes[s];
-					secdef.scopeArray.push(scope);
+                    var scope = {};
+                    scope.name = s;
+                    scope.description = secdef.scopes[s];
+                    secdef.scopeArray.push(scope);
                 }
             }
-			secdef.ref = s;
-			if (!secdef.description) secdef.description = '';
-			data.securityDefinitions.push(secdef);
+            secdef.ref = s;
+            if (!secdef.description) secdef.description = '';
+            data.securityDefinitions.push(secdef);
         }
-		content += templates.security(data);
+        content += templates.security(data);
     }
 
     var apiInfo = convertSwagger(swagger);
@@ -213,14 +213,14 @@ function convert(swagger,options) {
 
                 var codeSamples = (options.codeSamples || op["x-code-samples"]);
                 if (codeSamples) {
-					data.method = method.op;
-					data.methodUpper = method.op.toUpperCase();
-					data.url = url;
-					data.parameters = parameters;
-					data.produces = produces;
-					data.consumes = consumes;
-					data.operation = method;
-					data.resource = resource;
+                    data.method = method.op;
+                    data.methodUpper = method.op.toUpperCase();
+                    data.url = url;
+                    data.parameters = parameters;
+                    data.produces = produces;
+                    data.consumes = consumes;
+                    data.operation = method;
+                    data.resource = resource;
 
                     content += templates.heading_code_samples(data);
 
@@ -228,6 +228,7 @@ function convert(swagger,options) {
                         for (var s in op["x-code-samples"]) {
                             var sample = op["x-code-samples"][s];
                             var lang = languageCheck(sample.lang,header.language_tabs,true);
+
                             content += '````'+lang+'\n';
                             content += sample.source;
                             content += '\n````\n';
@@ -236,37 +237,37 @@ function convert(swagger,options) {
                     else {
                         if (languageCheck('shell', header.language_tabs, false)) {
                             content += '````shell\n';
-							content += templates.code_shell(data);
+                            content += templates.code_shell(data);
                             content += '````\n\n';
                         }
                         if (languageCheck('http', header.language_tabs, false)) {
                             content += '````http\n';
-							content += templates.code_http(data);
+                            content += templates.code_http(data);
                             content += '````\n\n';
                         }
                         if (languageCheck('html', header.language_tabs, false)) {
                             content += '````html\n';
-							content += templates.code_html(data);
+                            content += templates.code_html(data);
                             content += '````\n\n';
                         }
                         if (languageCheck('javascript', header.language_tabs, false)) {
                             content += '````javascript\n';
-							content += templates.code_javascript(data);
+                            content += templates.code_javascript(data);
                             content += '````\n\n';
                         }
                         if (languageCheck('ruby', header.language_tabs, false)) {
                             content += '````ruby\n';
-							content += templates.code_ruby(data);
+                            content += templates.code_ruby(data);
                             content += '````\n\n';
                         }
                         if (languageCheck('python', header.language_tabs, false)) {
                             content += '````python\n';
-							content += templates.code_python(data);
+                            content += templates.code_python(data);
                             content += '````\n\n';
                         }
                         if (languageCheck('java', header.language_tabs, false)) {
                             content += '````java\n';
-							content += templates.code_java(data);
+                            content += templates.code_java(data);
                             content += '````\n\n';
                         }
                     }
@@ -276,7 +277,7 @@ function convert(swagger,options) {
                 if (op.summary) content += '*'+op.summary+'*\n\n';
                 if (op.description) content += op.description+'\n\n';
                 
-				if (parameters.length>0) {
+                if (parameters.length>0) {
                     var longDescs = false;
                     for (var p in parameters) {
                         var param = parameters[p];
@@ -284,13 +285,13 @@ function convert(swagger,options) {
                         if (param["$ref"]) {
                             parameters[p] = param = jptr.jptr(swagger,param["$ref"]);
                         }
-						param.shortDesc = param.description ? param.description.split('\n')[0] : 'No description';
+                        param.shortDesc = param.description ? param.description.split('\n')[0] : 'No description';
                         if (param.description && (param.description.split('\n').length>1)) longDescs = true;
-						param.type = (param.type || 'object');
-						param.required = (param.required ? param.required : false);
+                        param.type = (param.type || 'object');
+                        param.required = (param.required ? param.required : false);
                     }
-					data.parameters = parameters;
-					content += templates.parameters(data);
+                    data.parameters = parameters;
+                    content += templates.parameters(data);
 
                     if (longDescs) {
                         for (var p in parameters) {
@@ -315,7 +316,7 @@ function convert(swagger,options) {
                         }
                         if (param.schema) {
                             if (!paramHeader) {
-                    			content += templates.heading_body_parameter(data);
+                                content += templates.heading_body_parameter(data);
                                 paramHeader = true;
                             }
                             var xmlWrap = '';
@@ -357,13 +358,13 @@ function convert(swagger,options) {
 
                 var responseSchemas = false;
                 var responseHeaders = false;
-				data.responses = [];
+                data.responses = [];
                 for (var resp in op.responses) {
                     var response = op.responses[resp];
                     if (response.schema) responseSchemas = true;
                     if (response.headers) responseHeaders = true;
 
-					response.status = resp;
+                    response.status = resp;
                     response.meaning = (resp == 'default' ? 'Default' :'Unknown');
                     var url = '';
                     for (var s in statusCodes) {
@@ -374,33 +375,37 @@ function convert(swagger,options) {
                         }
                     }
                     if (url) response.meaning = '['+response.meaning+']('+url+')';
-					if (!response.description) response.description = 'No description';
-					data.responses.push(response);
+                    if (!response.description) response.description = 'No description';
+                    data.responses.push(response);
                 }
-				content += templates.responses(data);
+                content += templates.responses(data);
 
                 if (responseHeaders) {
-					data.response_headers = [];
+                    data.response_headers = [];
                     for (var resp in op.responses) {
                         var response = op.responses[resp];
                         for (var h in response.headers) {
-						    var hdr = response.headers[h];
-							hdr.status = resp;
-							hdr.header = h;
-							if (!hdr.format) hdr.format = '';
-							if (!hdr.description) hdr.description = '';
+                            var hdr = response.headers[h];
+                            hdr.status = resp;
+                            hdr.header = h;
+                            if (!hdr.format) hdr.format = '';
+                            if (!hdr.description) hdr.description = '';
 
-							data.response_headers.push(hdr);
+                            data.response_headers.push(hdr);
                         }
                     }
-					content += templates.response_headers(data);
+                    content += templates.response_headers(data);
                 }
 
                 if (responseSchemas) {
-					content += templates.heading_example_responses(data);
+                    content += templates.heading_example_responses(data);
                     for (var resp in op.responses) {
                         var response = op.responses[resp];
                         if (response.schema) {
+
+                            if(response.schema.title !== undefined)
+                                content += '\n\n````\n' + response.schema.title + '\n````\n\n';
+
                             var xmlWrap = '';
                             var obj = dereference(response.schema,swagger);
                             if (obj.xml && obj.xml.name) {
@@ -415,7 +420,7 @@ function convert(swagger,options) {
                                 }
                                 if (doContentType(produces,'application/json')) {
                                     content += '````json\n';
-                                    content += JSON.stringify(obj,null,2)+'\n';
+                                    content += JSON.stringify(obj,null,4)+'\n';
                                     content += '````\n';
                                 }
                                 if (doContentType(produces,'text/x-yaml')) {
@@ -441,15 +446,15 @@ function convert(swagger,options) {
                 var security = (op.security ? op.security : swagger.security);
                 if (!security) security = [];
                 if (security.length<=0) {
-				    content += templates.authentication_none(data);
+                    content += templates.authentication_none(data);
                 }
                 else {
-				    data.securityDefinitions = [];
+                    data.securityDefinitions = [];
                     var list = '';
                     for (var s in security) {
                         var link = '#/securityDefinitions/'+Object.keys(security[s])[0];
                         var secDef = jptr.jptr(swagger,link);
-						data.securityDefinitions.push(secDef);
+                        data.securityDefinitions.push(secDef);
                         list += (list ? ', ' : '')+secDef.type;
                         var scopes = security[s][Object.keys(security[s])[0]];
                         if (Array.isArray(scopes) && (scopes.length>0)) {
@@ -460,8 +465,8 @@ function convert(swagger,options) {
                             list += ')';
                         }
                     }
-					data.authenticationStr = list;
-					content += templates.authentication(data);
+                    data.authenticationStr = list;
+                    content += templates.authentication(data);
                 }
 
                 content += '\n';
