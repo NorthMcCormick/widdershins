@@ -23,38 +23,65 @@ function clone(obj){
 }
 
 /**
+ * Function to see if two arrays have any of the same elements
+ */
+function doesArrayIncludeArrayValue(a1, a2) {
+    var intersect = false;
+
+    a1.forEach(function(a1v) {
+        a2.forEach(function(a2v) {
+            if(a1v === a2v) {
+                //console.log('intersect',)
+                intersect = true;
+            }
+        });
+    });
+
+    return intersect;
+}
+
+/**
 * function to reformat swagger paths object into an iodocs-style resources object, tags-first
 */
-function convertSwagger(source){
+function convertSwagger(source, options){
     var apiInfo = clone(source,false);
     apiInfo.resources = {};
     for (var p in apiInfo.paths) {
+        //console.log(apiInfo.paths[p]); // THIS HAS THE TAGS 
+
         for (var m in apiInfo.paths[p]) {
             if (m != 'parameters') {
                 var sMethod = apiInfo.paths[p][m];
-                var ioMethod = {};
-                ioMethod.path = p;
-                ioMethod.op = m;
-                var sMethodUniqueName = (sMethod.operationId ? sMethod.operationId : m+'_'+p).split('/').join('_');
-                sMethodUniqueName = sMethodUniqueName.split(' ').join('_'); // TODO {, } and : ?
-                var tagName = 'Default';
-                if (sMethod.tags && sMethod.tags.length>0) {
-                    tagName = sMethod.tags[0];
-                }
-                if (!apiInfo.resources[tagName]) {
-                    apiInfo.resources[tagName] = {};
-                    if (apiInfo.tags) {
-                        for (var t in apiInfo.tags) {
-                            var tag = apiInfo.tags[t];
-                            if (tag.name == tagName) {
-                                apiInfo.resources[tagName].description = tag.description;
-                                apiInfo.resources[tagName].externalDocs = tag.externalDocs;
+
+                //console.log(sMethod);
+
+                if(sMethod.tags !== undefined) {
+                    if(!doesArrayIncludeArrayValue(sMethod.tags, options.hideTags)) {
+                        var ioMethod = {};
+                        ioMethod.path = p;
+                        ioMethod.op = m;
+                        var sMethodUniqueName = (sMethod.operationId ? sMethod.operationId : m+'_'+p).split('/').join('_');
+                        sMethodUniqueName = sMethodUniqueName.split(' ').join('_'); // TODO {, } and : ?
+                        var tagName = 'Default';
+                        if (sMethod.tags && sMethod.tags.length>0) {
+                            tagName = sMethod.tags[0];
+                        }
+                        if (!apiInfo.resources[tagName]) {
+                            apiInfo.resources[tagName] = {};
+                            if (apiInfo.tags) {
+                                for (var t in apiInfo.tags) {
+                                    var tag = apiInfo.tags[t];
+                                    if (tag.name == tagName) {
+                                        apiInfo.resources[tagName].description = tag.description;
+                                        apiInfo.resources[tagName].externalDocs = tag.externalDocs;
+                                    }
+                                }
                             }
                         }
+                        if (!apiInfo.resources[tagName].methods) apiInfo.resources[tagName].methods = {};
+                        apiInfo.resources[tagName].methods[sMethodUniqueName] = ioMethod;
                     }
                 }
-                if (!apiInfo.resources[tagName].methods) apiInfo.resources[tagName].methods = {};
-                apiInfo.resources[tagName].methods[sMethodUniqueName] = ioMethod;
             }
         }
     }
@@ -115,6 +142,8 @@ function convert(swagger,options) {
     var defaults = {};
     defaults.language_tabs = [{'shell': 'Shell'},{'http': 'HTTP'},{'html': 'JavaScript'},{'javascript': 'Node.JS'},{'python': 'Python'},{'ruby': 'Ruby'},{'java': 'Java'}];
     defaults.codeSamples = true;
+    defaults.hideTags = [];
+
     options = Object.assign({},defaults,options);
 
     if (typeof templates === 'undefined') {
@@ -183,11 +212,12 @@ function convert(swagger,options) {
         content += templates.security(data);
     }
 
-    var apiInfo = convertSwagger(swagger);
+    var apiInfo = convertSwagger(swagger, options);
 
     for (var r in apiInfo.resources) {
         content += '# '+r+'\n\n';
-        var resource = apiInfo.resources[r]
+        var resource = apiInfo.resources[r];
+
         if (resource.description) content += resource.description+'\n\n';
 
         if (resource.externalDocs) {
@@ -359,6 +389,7 @@ function convert(swagger,options) {
                 var responseSchemas = false;
                 var responseHeaders = false;
                 data.responses = [];
+
                 for (var resp in op.responses) {
                     var response = op.responses[resp];
                     if (response.schema) responseSchemas = true;
@@ -378,6 +409,8 @@ function convert(swagger,options) {
                     if (!response.description) response.description = 'No description';
                     data.responses.push(response);
                 }
+
+
                 content += templates.responses(data);
 
                 if (responseHeaders) {
@@ -420,6 +453,7 @@ function convert(swagger,options) {
                                 }
                                 if (doContentType(produces,'application/json')) {
                                     content += '````json\n';
+
                                     content += JSON.stringify(obj,null,4)+'\n';
                                     content += '````\n';
                                 }
