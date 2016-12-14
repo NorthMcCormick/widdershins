@@ -143,6 +143,7 @@ function convert(swagger,options) {
     defaults.language_tabs = [{'shell': 'Shell'},{'http': 'HTTP'},{'html': 'JavaScript'},{'javascript': 'Node.JS'},{'python': 'Python'},{'ruby': 'Ruby'},{'java': 'Java'}];
     defaults.codeSamples = true;
     defaults.hideTags = [];
+    defaults.JSONAPISpec = false;
 
     options = Object.assign({},defaults,options);
 
@@ -454,7 +455,52 @@ function convert(swagger,options) {
                                 if (doContentType(produces,'application/json')) {
                                     content += '````json\n';
 
+                                    if(options.JSONAPISpec) {
+                                        // type
+                                        var type = 1;
+
+                                        if(response.schema.title !== undefined) {
+                                            switch(response.schema.title.toLowerCase()) {
+                                                case 'error':
+                                                case 'errors':
+                                                    type = 2;
+                                                break;
+
+                                                case 'warn':
+                                                case 'warning':
+                                                case 'warnings':
+                                                    type = 3;
+                                                break;
+
+                                            }
+                                        }
+
+                                        switch(type) {
+                                            case 1: // Success/normal data
+                                                obj = {
+                                                    status: response.status,
+                                                    data: obj
+                                                };
+                                            break;
+
+                                            case 2: // Errors
+                                                obj = {
+                                                    status: response.status,
+                                                    errors: obj
+                                                };
+                                            break;
+
+                                            case 3: // Warnings 
+                                                obj = {
+                                                    status: response.status,
+                                                    warnings: obj
+                                                };
+                                            break;
+                                        }
+                                    }
+
                                     content += JSON.stringify(obj,null,4)+'\n';
+
                                     content += '````\n';
                                 }
                                 if (doContentType(produces,'text/x-yaml')) {
