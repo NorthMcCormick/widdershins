@@ -259,6 +259,7 @@ function convert(swagger,options) {
                     if (op["x-code-samples"]) {
                         for (var s in op["x-code-samples"]) {
                             var sample = op["x-code-samples"][s];
+
                             var lang = languageCheck(sample.lang,header.language_tabs,true);
 
                             content += '````'+lang+'\n';
@@ -269,6 +270,7 @@ function convert(swagger,options) {
                     else {
                         if (languageCheck('shell', header.language_tabs, false)) {
                             content += '````shell\n';
+
                             content += templates.code_shell(data);
                             content += '````\n\n';
                         }
@@ -362,6 +364,7 @@ function convert(swagger,options) {
                             catch (ex) {
                                 console.log('# '+ex);
                             }
+
                             if (obj.properties) obj = obj.properties;
                             if (doContentType(consumes,'application/json')) {
                                 content += '````json\n';
@@ -436,13 +439,29 @@ function convert(swagger,options) {
                     content += templates.heading_example_responses(data);
                     for (var resp in op.responses) {
                         var response = op.responses[resp];
+
                         if (response.schema) {
 
                             if(response.schema.title !== undefined)
                                 content += '\n\n````\n' + response.schema.title + '\n````\n\n';
 
+                            if(response.schema.items !== undefined && response.schema.items.allOf !== undefined) {
+                                var newItems = [];
+
+                                response.schema.items.allOf.forEach(function(allOfItem) {
+                                    newItems.push(allOfItem);
+                                });
+
+                                response.schema.items = newItems;
+                            }
+
                             var xmlWrap = '';
-                            var obj = dereference(response.schema,swagger);
+                            var obj = dereference(response.schema, swagger);
+
+                            if(response.description == 'bInvalid user input') {
+                                //console.log(JSON.stringify(obj));
+                            }
+
                             if (obj.xml && obj.xml.name) {
                                 xmlWrap = obj.xml.name;
                             }
@@ -453,6 +472,7 @@ function convert(swagger,options) {
                                 catch (ex) {
                                     console.log('# '+ex);
                                 }
+
                                 if (doContentType(produces,'application/json')) {
                                     content += '````json\n';
 
