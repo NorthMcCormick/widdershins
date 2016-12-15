@@ -144,6 +144,7 @@ function convert(swagger,options) {
     defaults.codeSamples = true;
     defaults.hideTags = [];
     defaults.JSONAPISpec = false;
+    defaults.incldues = [];
 
     options = Object.assign({},defaults,options);
 
@@ -168,7 +169,7 @@ function convert(swagger,options) {
             header.toc_footers.push('<a href="'+swagger.externalDocs.url+'">'+(swagger.externalDocs.description ? swagger.externalDocs.description : 'External Docs')+'</a>');
         }
     }
-    header.includes = [];
+    header.includes = options.includes;
     header.search = true;
     header.highlight_theme = options.theme||'darkula';
 
