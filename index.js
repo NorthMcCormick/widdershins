@@ -462,83 +462,91 @@ function convert(swagger,options) {
                                 //console.log(JSON.stringify(obj));
                             }
 
-                            if (obj.xml && obj.xml.name) {
-                                xmlWrap = obj.xml.name;
-                            }
-                            if (Object.keys(obj).length>0) {
-                                try {
-                                    obj = sampler.sample(obj);
+                            if(obj !== undefined) {
+
+                                if (obj.xml && obj.xml.name) {
+                                    xmlWrap = obj.xml.name;
                                 }
-                                catch (ex) {
-                                    console.log('# '+ex);
-                                }
+                                if (Object.keys(obj).length>0) {
+                                    try {
+                                        obj = sampler.sample(obj);
+                                    }
+                                    catch (ex) {
+                                        console.log('# '+ex);
+                                    }
 
-                                if (doContentType(produces,'application/json')) {
-                                    content += '````json\n';
+                                    if (doContentType(produces,'application/json')) {
+                                        content += '````json\n';
 
-                                    if(options.JSONAPISpec) {
-                                        // type
-                                        var type = 1;
+                                        if(options.JSONAPISpec) {
+                                            // type
+                                            var type = 1;
 
-                                        if(response.schema.title !== undefined) {
-                                            switch(response.schema.title.toLowerCase()) {
-                                                case 'error':
-                                                case 'errors':
-                                                    type = 2;
+                                            if(response.schema.title !== undefined) {
+                                                switch(response.schema.title.toLowerCase()) {
+                                                    case 'error':
+                                                    case 'errors':
+                                                        type = 2;
+                                                    break;
+
+                                                    case 'warn':
+                                                    case 'warning':
+                                                    case 'warnings':
+                                                        type = 3;
+                                                    break;
+
+                                                }
+                                            }
+
+                                            switch(type) {
+                                                case 1: // Success/normal data
+                                                    obj = {
+                                                        status: response.status,
+                                                        data: obj
+                                                    };
                                                 break;
 
-                                                case 'warn':
-                                                case 'warning':
-                                                case 'warnings':
-                                                    type = 3;
+                                                case 2: // Errors
+                                                    obj = {
+                                                        status: response.status,
+                                                        errors: obj
+                                                    };
                                                 break;
 
+                                                case 3: // Warnings 
+                                                    obj = {
+                                                        status: response.status,
+                                                        warnings: obj
+                                                    };
+                                                break;
                                             }
                                         }
 
-                                        switch(type) {
-                                            case 1: // Success/normal data
-                                                obj = {
-                                                    status: response.status,
-                                                    data: obj
-                                                };
-                                            break;
+                                        content += JSON.stringify(obj,null,4)+'\n';
 
-                                            case 2: // Errors
-                                                obj = {
-                                                    status: response.status,
-                                                    errors: obj
-                                                };
-                                            break;
-
-                                            case 3: // Warnings 
-                                                obj = {
-                                                    status: response.status,
-                                                    warnings: obj
-                                                };
-                                            break;
-                                        }
+                                        content += '````\n';
                                     }
-
-                                    content += JSON.stringify(obj,null,4)+'\n';
-
-                                    content += '````\n';
+                                    if (doContentType(produces,'text/x-yaml')) {
+                                        content += '````json\n';
+                                        content += yaml.safeDump(obj)+'\n';
+                                        content += '````\n';
+                                    }
+                                    if (xmlWrap) {
+                                        var newObj = {};
+                                        newObj[xmlWrap] = obj;
+                                        obj = newObj;
+                                    }
+                                    if ((typeof obj === 'object') && doContentType(produces,'application/xml')) {
+                                        content += '````xml\n';
+                                        content += xml.getXml(obj,'@','',true,'  ',false)+'\n';
+                                        content += '````\n';
+                                    }
                                 }
-                                if (doContentType(produces,'text/x-yaml')) {
-                                    content += '````json\n';
-                                    content += yaml.safeDump(obj)+'\n';
-                                    content += '````\n';
-                                }
-                                if (xmlWrap) {
-                                    var newObj = {};
-                                    newObj[xmlWrap] = obj;
-                                    obj = newObj;
-                                }
-                                if ((typeof obj === 'object') && doContentType(produces,'application/xml')) {
-                                    content += '````xml\n';
-                                    content += xml.getXml(obj,'@','',true,'  ',false)+'\n';
-                                    content += '````\n';
-                                }
+                            }else{
+                                console.log('Caught undefined object');
+                                console.log('obj: ' + JSON.stringify(obj));
+                                console.log('resp: ' + resp);
+                                console.log('response: ' + JSON.stringify(response));
                             }
                         }
                     }
