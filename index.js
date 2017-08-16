@@ -400,11 +400,15 @@ function convert(swagger,options) {
                     if (response.schema) responseSchemas = true;
                     if (response.headers) responseHeaders = true;
 
-                    response.status = resp;
+                    if(!response.status) {
+                        response.status = resp;
+                    }
+
                     response.meaning = (resp == 'default' ? 'Default' :'Unknown');
+
                     var url = '';
                     for (var s in statusCodes) {
-                        if (statusCodes[s].code == resp) {
+                        if (statusCodes[s].code == response.status) {
                             response.meaning = statusCodes[s].phrase;
                             url = statusCodes[s].spec_href;
                             break;
@@ -439,7 +443,7 @@ function convert(swagger,options) {
                     content += templates.heading_example_responses(data);
                     for (var resp in op.responses) {
                         var response = op.responses[resp];
-
+                        
                         if (response.schema) {
 
                             if(response.schema.title !== undefined)
