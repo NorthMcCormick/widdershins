@@ -40,12 +40,27 @@ function doesArrayIncludeArrayValue(a1, a2) {
     return intersect;
 }
 
+function compareByOrder(a, b, prop) {
+  return a.order - b.order;
+}
+
 /**
 * function to reformat swagger paths object into an iodocs-style resources object, tags-first
 */
 function convertSwagger(source, options){
     var apiInfo = clone(source,false);
     apiInfo.resources = {};
+
+    /** Sort the paths before doing other stuff **/
+
+    for (var p in apiInfo.paths) {
+        for (var m in apiInfo.paths[p]) {
+            if(apiInfo.paths[p][m].order === undefined) {
+                apiInfo.paths[p][m].order = 10000;
+            }
+        }
+    }
+
     for (var p in apiInfo.paths) {
         //console.log(apiInfo.paths[p]); // THIS HAS THE TAGS 
 
@@ -53,15 +68,18 @@ function convertSwagger(source, options){
             if (m != 'parameters') {
                 var sMethod = apiInfo.paths[p][m];
 
-                //console.log(sMethod);
-
                 if(sMethod.tags !== undefined) {
                     if(!doesArrayIncludeArrayValue(sMethod.tags, options.hideTags)) {
                         var ioMethod = {};
                         ioMethod.path = p;
                         ioMethod.op = m;
+                        ioMethod.order = apiInfo.paths[p][m].order;
+
                         var sMethodUniqueName = (sMethod.operationId ? sMethod.operationId : m+'_'+p).split('/').join('_');
                         sMethodUniqueName = sMethodUniqueName.split(' ').join('_'); // TODO {, } and : ?
+
+                        
+                        
                         var tagName = 'Default';
                         if (sMethod.tags && sMethod.tags.length>0) {
                             tagName = sMethod.tags[0];
@@ -87,6 +105,7 @@ function convertSwagger(source, options){
     }
     delete apiInfo.paths; // to keep size down
     delete apiInfo.definitions; // ditto
+
     return apiInfo;
 }
 
@@ -228,8 +247,21 @@ function convert(swagger,options) {
             }
         }
 
+        var methodsArray = [];
+
         for (var m in resource.methods) {
-            var method = resource.methods[m];
+            methodsArray.push(resource.methods[m]);
+        }
+
+        //console.log('----');
+
+        methodsArray = methodsArray.sort(compareByOrder);
+
+        //console.log(methodsArray);
+
+        //for (var m in resource.methods) {
+        for(var iii = 0; iii < methodsArray.length; iii++) {
+            var method = methodsArray[iii];//resource.methods[m];
             var subtitle = method.op.toUpperCase()+' '+method.path;
             var op = swagger.paths[method.path][method.op];
             if (method.op != 'parameters') {
