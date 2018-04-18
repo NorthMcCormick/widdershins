@@ -31,7 +31,6 @@ function doesArrayIncludeArrayValue(a1, a2) {
     a1.forEach(function(a1v) {
         a2.forEach(function(a2v) {
             if(a1v === a2v) {
-                //console.log('intersect',)
                 intersect = true;
             }
         });
@@ -62,7 +61,7 @@ function convertSwagger(source, options){
     }
 
     for (var p in apiInfo.paths) {
-        //console.log(apiInfo.paths[p]); // THIS HAS THE TAGS 
+        // console.log(apiInfo.paths[p]); // THIS HAS THE TAGS 
 
         for (var m in apiInfo.paths[p]) {
             if (m != 'parameters') {
@@ -109,19 +108,32 @@ function convertSwagger(source, options){
     return apiInfo;
 }
 
-function dereference(obj,swagger){
-    if (obj["$ref"]) obj = jptr.jptr(swagger,obj["$ref"]);
-    var changes = 1;
-    while (changes>0) {
-        changes = 0;
-        recurseotron.recurse(obj,{},function(obj,state) {
-            if ((state.key === '$ref') && (typeof obj === 'string') && (!circular.isCircular(circles, obj))) {
-                state.parents[state.parents.length-2][state.keys[state.keys.length-2]] = jptr.jptr(swagger,obj);
-                delete state.parent["$ref"];
-                changes++;
+function dereference(obj, swagger){
+    /**
+     * If we are receiving a definition like "#/definitions/error"
+     * then lets unwrap it. If it's an object, move through
+     * it and find more $refs.
+     */
+
+    if(typeof obj === 'string') {
+        if(obj.startsWith('#') && isNaN(obj)) {
+            obj = jptr.jptr(swagger, obj);
+        }
+    } else if(typeof obj === 'object' && obj !== null){
+        /**
+         * We need to unwrap a ref before continuing into it
+         */
+        Object.keys(obj).forEach(function(key) {    
+            if(key === '$ref') {
+                obj = dereference(obj[key], swagger);
             }
         });
+
+        Object.keys(obj).forEach(function(key) {
+            obj[key] = dereference(obj[key], swagger);
+        });
     }
+
     return obj;
 }
 
@@ -253,11 +265,7 @@ function convert(swagger,options) {
             methodsArray.push(resource.methods[m]);
         }
 
-        //console.log('----');
-
         methodsArray = methodsArray.sort(compareByOrder);
-
-        //console.log(methodsArray);
 
         //for (var m in resource.methods) {
         for(var iii = 0; iii < methodsArray.length; iii++) {
@@ -378,7 +386,7 @@ function convert(swagger,options) {
                     for (var p in parameters) {
                         var param = parameters[p];
                         if (param["$ref"]) {
-                            param = jptr.jptr(swagger,param["$ref"]);
+                            param = jptr.jptr(swagger, param["$ref"]);
                         }
                         if (param.schema) {
                             if (!paramHeader) {
@@ -386,7 +394,9 @@ function convert(swagger,options) {
                                 paramHeader = true;
                             }
                             var xmlWrap = '';
-                            var obj = dereference(param.schema,swagger);
+
+                            var obj = dereference(param.schema, swagger);
+
                             if (obj.xml && obj.xml.name) {
                                 xmlWrap = obj.xml.name;
                             }
@@ -492,6 +502,7 @@ function convert(swagger,options) {
                             }
 
                             var xmlWrap = '';
+
                             var obj = dereference(response.schema, swagger);
 
                             if(response.description == 'bInvalid user input') {
@@ -519,18 +530,23 @@ function convert(swagger,options) {
                                             var type = 1;
 
                                             if(response.schema.title !== undefined) {
-                                                switch(response.schema.title.toLowerCase()) {
-                                                    case 'error':
-                                                    case 'errors':
-                                                        type = 2;
-                                                    break;
+                                                try {
+                                                    switch(response.schema.title.toLowerCase()) {
+                                                        case 'error':
+                                                        case 'errors':
+                                                            type = 2;
+                                                        break;
 
-                                                    case 'warn':
-                                                    case 'warning':
-                                                    case 'warnings':
-                                                        type = 3;
-                                                    break;
+                                                        case 'warn':
+                                                        case 'warning':
+                                                        case 'warnings':
+                                                            type = 3;
+                                                        break;
 
+                                                    }
+                                                } catch(e) {
+                                                    console.error('Could not find type');
+                                                    console.error(e, response);
                                                 }
                                             }
 
