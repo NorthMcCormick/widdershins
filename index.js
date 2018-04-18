@@ -119,7 +119,7 @@ function dereference(obj, swagger){
         if(obj.startsWith('#') && isNaN(obj)) {
             obj = jptr.jptr(swagger, obj);
         }
-    } else if(typeof obj === 'object' && obj !== null){
+    } else if(typeof obj === 'object' && obj !== null && obj !== undefined){
         /**
          * We need to unwrap a ref before continuing into it
          */
@@ -129,9 +129,11 @@ function dereference(obj, swagger){
             }
         });
 
-        Object.keys(obj).forEach(function(key) {
-            obj[key] = dereference(obj[key], swagger);
-        });
+        if(obj !== null && obj !== undefined) {
+            Object.keys(obj).forEach(function(key) {
+                obj[key] = dereference(obj[key], swagger);
+            });
+        }
     }
 
     return obj;
@@ -401,7 +403,9 @@ function convert(swagger,options) {
                                 xmlWrap = obj.xml.name;
                             }
                             try {
-                                obj = sampler.sample(obj, {skipReadOnly: true});
+                                if(obj !== undefined) { 
+                                    obj = sampler.sample(obj, {skipReadOnly: true});
+                                }
                             }
                             catch (ex) {
                                 console.log('# '+ex);
